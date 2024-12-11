@@ -1,7 +1,7 @@
 logging.level.org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
 
 server:
-  port: '7070'
+  port: '8080'
   error:
     include-binding-errors: always
     include-message: always

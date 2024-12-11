@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h1>WebSocket Chat Demo</h1>
+<div id="status">Connecting...</div>
+<input type="text" id="message" placeholder="Enter a message">
+<button id="sendBtn">Send Message</button>
+<ul id="messages"></ul>
+
+<script>
+    let stompClient;
+
+    function connect() {
+        // Kết nối đến WebSocket server qua SockJS
+        const socket = new SockJS('http://localhost:8080/ws');
+        stompClient = Stomp.over(socket);
+
+        // Kết nối WebSocket
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+
+            // Cập nhật trạng thái kết nối
+            document.getElementById('status').innerText = "Connected";
+
+            // Đăng ký nhận tin nhắn từ server qua topic "/topic/public"
+            stompClient.subscribe('/topic/public', function (message) {
+                showMessage(JSON.parse(message.body).content);
+            });
+        }, function (error) {
+            console.error('Error connecting to WebSocket: ', error);
+            document.getElementById('status').innerText = "Connection Failed";
+        });
+    }
+
+    // Hàm gửi tin nhắn
+    function sendMessage() {
+        const messageInput = document.getElementById('message');
+        const messageContent = messageInput.value.trim();
+
+        if (messageContent && stompClient) {
+            const chatMessage = {
+                sender: 'DemoUser',
+                content: messageContent,
+                type: 'CHAT'
+            };
+
+            // Gửi tin nhắn qua WebSocket tới "/app/chat.sendMessage"
+            stompClient.send('/app/chat.sendMessage', {}, JSON.stringify(chatMessage));
+            messageInput.value = '';
+        }
+    }
+
+    // Hiển thị tin nhắn lên giao diện
+    function showMessage(message) {
+        const messagesList = document.getElementById('messages');
+        const messageElement = document.createElement('li');
+        messageElement.textContent = message;
+        messagesList.appendChild(messageElement);
+    }
+
+    // Lắng nghe sự kiện khi nhấn nút "Send Message"
+    document.getElementById('sendBtn').addEventListener('click', sendMessage);
+
+    // Tự động kết nối khi tải trang
+    connect();
+</script>
+</body>
+</html>
